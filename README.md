@@ -11,7 +11,7 @@ Running this code requires:
 
 * adding the required data files in due locations (see yaml)
 * editing the config.yaml file accordinly
-* run Snakemake with 'snakemake --use-conda -j <thread number>
+* run Snakemake with ```snakemake --use-conda -j <thread number>
 
 If all goes well, the proper analysis will be followed by the making of the html report in R.
 
