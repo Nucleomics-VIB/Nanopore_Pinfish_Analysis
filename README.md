@@ -7,6 +7,17 @@ This Snakemake pipeline and accompanying RStudio report are largely inspired by 
 
 Please refer to the original document for installilng the necessary components and for more info about the pipeline.
 
+Running this code requires:
+
+* adding the required data files in due locations (see yaml)
+* editing the config.yaml file accordinly
+* run Snakemake with 'snakemake --use-conda -j <thread number>
+
+If all goes well, the proper analysis will be followed by the making of the html report in R.
+
+* the final data files are put in the folder Analysis
+* the final report should appear as ```Nanopore_Pinfish_Analysis.html```
+
 <hr>
 
 <h4>Please send comments and feedback to <a href="mailto:nucleomics.bioinformatics@vib.be">nucleomics.bioinformatics@vib.be</a></h4>
