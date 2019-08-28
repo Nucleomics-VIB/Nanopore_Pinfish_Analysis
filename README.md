@@ -1,6 +1,8 @@
 [(Nucleomics-VIB)](https://github.com/Nucleomics-VIB)
-![ngs-tools](ngstools.png) - Nanopore_Pinfish_Analysis
+Nanopore_Pinfish_Analysis
 ==========
+
+This Snakemake pipeline and accompanying RStudio report are largely inspired by the ONT tutorial found at [nanoporetech](https://github.com/nanoporetech/ont_tutorial_pinfish) with addition of a few additional analysis steps.
 
 <hr>
 
