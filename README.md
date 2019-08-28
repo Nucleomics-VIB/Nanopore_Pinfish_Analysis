@@ -15,7 +15,7 @@ Running this code requires:
 
 If all goes well, the proper analysis will be followed by the making of the html report in R.
 
-* the final data files are put in the folder Analysis
+* the final data files are put in the folder ```Analysis```
 * the final report should appear as ```Nanopore_Pinfish_Analysis.html```
 
 <hr>
