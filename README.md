@@ -3,7 +3,7 @@
 Nanopore_Pinfish_Analysis
 ==========
 
-This Snakemake pipeline and accompanying RStudio report are largely inspired by the ```ont_tutorial_pinfish``` found at [nanoporetech](https://github.com/nanoporetech/ont_tutorial_pinfish) with addition of a few additional analysis steps.
+This Snakemake pipeline and accompanying RStudio report are largely inspired by the ```ont_tutorial_pinfish``` found at [nanoporetech](https://github.com/nanoporetech/ont_tutorial_pinfish) with addition of a few analysis steps.
 
 Please refer to the original document for installilng the necessary components and for more info about the pipeline.
 
