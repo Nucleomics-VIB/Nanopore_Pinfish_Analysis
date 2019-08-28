@@ -1,0 +1,26 @@
+\usepackage{graphicx}
+
+\usepackage{pdfpages}
+
+\usepackage{float}
+\let\origfigure\figure
+\let\endorigfigure\endfigure
+\renewenvironment{figure}[1][2] {
+    \expandafter\origfigure\expandafter[H]
+} {
+    \endorigfigure
+}
+
+\usepackage{fancyhdr}
+\pagestyle{fancy}
+\rhead{\includegraphics[height=24pt]{Static/Images/NC_logo.png}}
+
+\usepackage{titling}
+\pretitle{%
+  \begin{center}
+  \LARGE
+  \includegraphics[width=6cm,height=4cm]{Static/Images/picture.png}\\[\bigskipamount]
+}
+\posttitle{\end{center}}
+
+\usepackage{placeins}
