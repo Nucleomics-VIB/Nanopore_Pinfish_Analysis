@@ -195,7 +195,6 @@ sequenceSet <- as.data.frame(cbind(as.character(ShortRead::id(fastq)),
                              stringsAsFactors=FALSE)
 colnames(sequenceSet) <- c("seqId", "length", "quality", "set")
 
-# pycIds <- gsub(".+ ", "", as.character(ShortRead::id(readFastq(pycData))))
 # collect metrics from PyChopper reads
 pycIds <- gsub(" strand=.", "", as.character(ShortRead::id(readFastq(pycData))))
 sequenceSet[which(sequenceSet$seqId %in% pycIds), "set"] <- "PyChopper"
@@ -296,7 +295,7 @@ Based on the Full BAM data and the genome coordinate of all exons (current refer
 ```
 
 
-```{r, echo=FALSE, comment=""}
+```{r MosDepth analysis, echo=FALSE, comment=""}
 # import results for R
 cov <- read_delim("Analysis/MosDepth/gt0.regions.bed.gz", 
     "\t", escape_double = FALSE, col_names = FALSE, 
@@ -327,7 +326,7 @@ REM: the plot was truncated at 500 to hide the very long tail of highly expresse
 
 The full distribution of expressed genes is shown next with the cumulative sum of the read coverage across all `r nrow(cvg.dat)` genes ordered from the least to the most expressed
 
-```{r, echo=FALSE, comment=""}
+```{r MosDepth IGV track, echo=FALSE, comment=""}
 # add cumsum
 tot <- sum(cvg.dat$avg_cvg)
 max <- max(cvg.dat$avg_cvg)
@@ -377,32 +376,24 @@ The next table reports the top`r topexp` most expressed genes based on coverage 
 
 knitr::kable(tail(cvg.dat2,topexp)[,c(1:5,9)], caption=paste("Top ", topexp, " expressed genes", sep=""), booktabs=TRUE, table.envir='table*', linesep="")  %>%
   kable_styling(latex_options=c("hold_position", font_size=9)) 
-
-# reorder dataframe
-#cvg.dat %>% 
-#  group_by(gene) %>% 
-#  filter(n()>1) %>%
-#  arrange(avg_cvg)
 ```
 
 # Functional enrichment results from the Top`r topexp` expressed genes
 
 The biological functions carried by the top `r topexp` expressed genes were identified using '''`r config$mine`''' as part of the '''InterMine''' suite [@InterMine] (http://intermine.org/).
 
-```{r, echo=FALSE, cache=FALSE, resize.width=100}
+```{r InterMine analysis, echo=FALSE, cache=FALSE, resize.width=100}
 # prepare InterMine sources
 mine <- config$mine
 im <- initInterMine(mine=listMines()[mine])
-template = getTemplates(im)
-# head(template)
+#template = getTemplates(im)
 #template[grep("gene", template$name, ignore.case=TRUE),]
-queryGeneGO <- getTemplateQuery(im, "Gene_GO")
+#queryGeneGO <- getTemplateQuery(im, "Gene_GO")
 #queryGeneGO
-widgets = as.data.frame(getWidgets(im))
+#queryGenePathway <- getTemplateQuery(im, "Pathway_Genes")
+#queryGenePathway
+#widgets = as.data.frame(getWidgets(im))
 #widgets
-
-#BiocManager::install("org.Sc.sgd.db")
-#library(org.Sc.sgd.db)
 
 # load the correct genome database for InterMineR
 enrichlib <- config$orgdb
@@ -418,8 +409,6 @@ mapped_genes <- mappedkeys(x)
 xx <- as.list(x[mapped_genes])
 
 # prepare gene-list for enrichment
-#ids <- c("YBR072W", "YBR118W", "YHR174W", "YKL060C", "YKL152C", "YKL153W", "YDR077W", "YGL055W", "YGL102C", "YGL103W", "YGR192C", "YGR254W", "YJL052W", "YJL159W", "YLR044C", "YLR110C", "YMR251W-A", "YNL031C", "YOL052C-A", "YPR036W-A")
-
 # extract gene IDs to vector
 ids <- tail(cvg.dat2, topexp)[,1]$gene
 
@@ -458,7 +447,7 @@ Path_FDR_enrichResult <- doEnrichment(
 
 ```
 
-```{r MinerTop, echo=FALSE, cache=FALSE, resize.width=100}
+```{r InterMine enrichment results, echo=FALSE, cache=FALSE, resize.width=100}
 knitr::kable(GO_FDR_enrichResult$data[1:10,], 
              caption=paste("Top10 Miner-enriched GO categoried for the Top", topexp," genes", sep=""), 
              booktabs=TRUE, 
@@ -467,7 +456,7 @@ knitr::kable(GO_FDR_enrichResult$data[1:10,],
   kable_styling(latex_options=c("hold_position", font_size=9)) 
 ```
 
-```{r MinerTop2, echo=FALSE, cache=FALSE, resize.width=100}
+```{r InterMine enrichment results-2, echo=FALSE, cache=FALSE, resize.width=100}
 knitr::kable(Path_FDR_enrichResult$data, 
              caption=paste("Miner-enriched pathways for the Top", topexp," genes", sep=""), 
              booktabs=TRUE, 
@@ -547,8 +536,6 @@ printGFFclass <- function(usegffclass) {
   gffCoords$interval <- gffCoords[,5] - gffCoords[,4]
   gtype <- gff$V3
   
-  #check exon count ...
-  # (diff(sort(append(which(gtype=="transcript"), length(gtype)+1), decreasing=FALSE))-1)[gffTranscripts[match(gffclasssel[,2],  gffTranscripts[,2]),1]]
   gffCoords$exoncount <- gffclasssel[,4]
   # concordant in test sets
   
@@ -559,7 +546,12 @@ printGFFclass <- function(usegffclass) {
   if (length(which(is.na(gffCoords[,1])))>0) { gffCoords <- gffCoords[-which(is.na(gffCoords[,1])),] }
   tlen <- nrow(gffCoords)
   mess <- ifelse(tlen > 20, " first 20 of ", "")
-  kable(head(gffCoords, 20), format="pandoc", caption=paste("Table summarising the ", mess, tlen, " transcripts identified by the Pinfish that correspond to GffCompare class \"",usegffclass,"\"",sep=""))
+  
+  # print table of results
+  kable(head(gffCoords, 20), 
+        format="pandoc", 
+        caption=paste("Table summarising the ", mess, tlen, " transcripts identified by the Pinfish that correspond to GffCompare class \"",usegffclass,"\"",sep="")
+        )
 
 }
 
@@ -662,12 +654,15 @@ It is also worth recording the versions of the software that have been used for 
 
 \fontsize{6}{10}
 
-```{r, engine='bash', echo=FALSE, comment=NA}
-
-# path to conda on the machine
-condapath="/opt/biotools/miniconda3/condabin"
-
-${condapath}/conda list -n Pinfish "samtools|minimap2|snakemake|rstudio|pinfish|pychopper|racon|gffread|gffcompare|igv|openjdk|mosdepth"
+```{r report conda packages, eval=TRUE, echo=FALSE, comment=NA}
+cmd <- paste(config$condapath, 
+  "/conda list -n ", 
+  config$condaenv, 
+  " ",
+  "\'samtools|minimap2|snakemake|rstudio|pinfish|pychopper|racon|gffread|gffcompare|igv|openjdk|mosdepth\'",
+  sep="")
+conda.tools <- system(cmd, intern = TRUE)
+conda.tools
 ```
 
 
@@ -675,7 +670,7 @@ ${condapath}/conda list -n Pinfish "samtools|minimap2|snakemake|rstudio|pinfish|
 
 \bigskip
 
-last edit: 2019-08-06
+last edit: `r date`
 
 ![logo](Static/Images/NC_logo.png) more at **<http://www.nucleomics.be>**
 
