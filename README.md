@@ -22,6 +22,8 @@ If all goes well, the proper analysis will be followed by the making of the html
 * the final data files are put in the folder ```Analysis```
 * the final report should appear as ```Nanopore_Pinfish_Analysis.html```
 
+rem: when something breaks the snake, you can fix the missing steps and run the report manually with ```R --slave -e 'rmarkdown::render("Nanopore_Pinfish_Analysis.Rmd", "html_document")'``` withing the base project folder.
+
 <hr>
 
 <h4>Please send comments and feedback to <a href="mailto:nucleomics.bioinformatics@vib.be">nucleomics.bioinformatics@vib.be</a></h4>
