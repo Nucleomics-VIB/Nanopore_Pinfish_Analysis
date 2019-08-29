@@ -11,6 +11,9 @@ Running this code requires:
 
 * adding the required data files in due locations (see yaml)
 * editing the config.yaml file accordinly
+* edit the **Preamble.md** file to include a text describing the Aim of the experiment. This text will be added to the report as first section and is one of the two report sections that can be edited by the end-user.
+* optionally edit **Conclusion.md** that will be added at the end of the report during knitting.
+
 * run Snakemake with ```snakemake --use-conda -j <thread number>
 
 If all goes well, the proper analysis will be followed by the making of the html report in R.
