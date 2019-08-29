@@ -9,7 +9,7 @@ Please refer to the original document for installilng the necessary components a
 
 Running this code requires:
 
-* installing **miniconda** and all required dependencies from the provided **environment.yaml** (*conda env create --name pinfish_3.6--file=environment.yaml*)
+* installing **miniconda** and all required dependencies from the provided **environment.yaml** (```conda env create --name pinfish_3.6 --file=environment.yaml```)
 * editing the **config.yaml** file tomatch your own machine, reference genome, and data
 * adding the required data files in due locations (matching the yaml)
 * edit the **Preamble.md** file to include a text describing the 'Aim' of the experiment. This text will be added to the report as first section and is one of the two report sections that can be edited by the end-user.
@@ -21,6 +21,8 @@ If all goes well, the proper analysis will be followed by the making of the html
 
 * the final data files are put in the folder ```Analysis```
 * the final report should appear as ```Nanopore_Pinfish_Analysis.html```
+
+rem: when something breaks the snake, you can fix the missing steps and run the report manually with ```R --slave -e 'rmarkdown::render("Nanopore_Pinfish_Analysis.Rmd", "html_document")'``` withing the base project folder.
 
 <hr>
 
