@@ -55,17 +55,9 @@ library(stringr)
 library(gridExtra)
 library(dplyr)
 library(InterMineR)
-#library(GeneAnswers)
-
-# path to conda on the machine
-condapath="/opt/biotools/miniconda3/condabin"
 
 config <- yaml.load_file("config.yaml")
 tutorialText <- config$tutorialText
-
-# load the correct genome database for InterMineR
-enrichlib <- config$orgdb
-library(enrichlib,character.only = TRUE)
 
 # how many genes for enrichment (from config.yaml)
 topexp=config$topexp
@@ -77,26 +69,16 @@ rawData <- file.path(getwd(), "RawData", gsub("(\\.gz$)|(\\.bz2$)", "",config$ra
 
 pycData <- file.path(getwd(), "Analysis", "Pychopper", 
                      paste(gsub("(\\.gz$)|(\\.bz2$)", "", config$raw_fastq), "pychop.fastq", sep="."))
-
 ```
 
-# Aim
-
-A cDNA library was prepared from Saccharomyces cerevisiae (S288c) total RNA using the **'Teloprime v2 kit'** (https://www.lexogen.com/teloprime-full-length-cdna-amplification/). mRNA was processed and amplified to lead to a nanopore cDNA library loaded on a single GridION flow-cell. RNA QC and run metrics are not reported here but were all in specs (CVD).
-
-This sequencing experiment aims at defining the yield and analyse the content of a cDNA run in order to evaluate whether this approach is applicable to RNA expression studies and potentially differential transcriptome analysis. The sample used for this pilot experiment was prepared in large quantities after growth on a rich medium. A second pilot experiment will be needed to evaluate the reproducibility of such sequencing applied to several replicates and two different growth conditions.
-
-# GridION Transcriptome data processing workflow
-
-Best quality read data was produced by re-basecalling the raw ONT data with Guppy (version 3.0.6) in high accuracy calling mode (hac).
-
-The **'Pinfish analysis pipeline'** selects reads which have both primer sequences expected from the library prep and cuts the found fragments out to produce a high quality data subset using **'Pychopper'** (https://github.com/nanoporetech/pychopper).
-
-All selected reads are aligned to the reference genome with **'minimap2'** [@minimap22018] to find the corresponding loci. The obtained mapping data is then used to cluster different gene regions and obtain spliced variants with documented exon usage. The clusters are corrected using the long read mapping data and **'racon'** [@racon2017] then classified against the reference transcriptome models and statistics are returned to report expected and novel entities [@R-ShortRead].
-
-The table below reports the counts of the different entities found with the yeast dataset.
-
 ```{r cust.functions, echo=FALSE}
+slurpContent <- function(filename) {
+  include = as.logical(config$UserText)
+  if (include) {
+    paste(readLines(filename),collapse="\n")
+  }
+}
+
 ncalc <- function(len.vector, n) {
   # N50 - length such that scaffolds of this length or longer include half the bases of the assembly
   len.sorted <- rev(sort(len.vector))
@@ -136,13 +118,30 @@ roundUpNice <- function(x, nice=seq(from=1, to=10, by=0.25)) {
 ```
 
 ```{r startingData, echo=FALSE}
+
 data <- lapply(c(rawData, pycData), processQCFastq)
 qcData <- data.frame(data)
 colnames(qcData) <- c("RawData", "Pychopper")
 
 ```
 
+`r slurpContent("Preamble.md")`
+
+
+# GridION Transcriptome data processing workflow
+
+Best quality read data was produced by re-basecalling the raw ONT data with Guppy (version `r config$guppy_version`) in high accuracy calling mode (hac).
+
+The **'Pinfish analysis pipeline'** selects reads which have both primer sequences expected from the library prep and cuts the found fragments out to produce a high quality data subset using **'Pychopper'** (https://github.com/nanoporetech/pychopper).
+
+All selected reads are aligned to the reference genome with **'minimap2'** [@minimap22018] to find the corresponding loci. The obtained mapping data is then used to cluster different gene regions and obtain spliced variants with documented exon usage. The clusters are corrected using the long read mapping data and **'racon'** [@racon2017] then classified against the reference transcriptome models and statistics are returned to report expected and novel entities [@R-ShortRead].
+
+The table below reports the counts of the different entities found with the sequencing dataset.
+
+
+
 ```{r summaryStatsTable, echo=FALSE, cache=FALSE, resize.width=100}
+
 knitr::kable(qcData, caption="Summary statistics for the cDNA data processed before and after PyChopper filtering", booktabs=TRUE, table.envir='table*', linesep="")  %>%
   kable_styling(latex_options=c("hold_position", font_size=9)) 
 ```
@@ -185,7 +184,10 @@ The figure above shows the distribution of Pychopper classifications for sequenc
 
 ```{r lengthdistribution, include=TRUE, cache=FALSE, echo=FALSE}
 
+# load raw reads
 fastq <- readFastq(rawData)
+
+# collect metrics for all reads
 sequenceSet <- as.data.frame(cbind(as.character(ShortRead::id(fastq)), 
                                    width(fastq), 
                                    alphabetScore(fastq)/width(fastq) ,
@@ -194,6 +196,7 @@ sequenceSet <- as.data.frame(cbind(as.character(ShortRead::id(fastq)),
 colnames(sequenceSet) <- c("seqId", "length", "quality", "set")
 
 # pycIds <- gsub(".+ ", "", as.character(ShortRead::id(readFastq(pycData))))
+# collect metrics from PyChopper reads
 pycIds <- gsub(" strand=.", "", as.character(ShortRead::id(readFastq(pycData))))
 sequenceSet[which(sequenceSet$seqId %in% pycIds), "set"] <- "PyChopper"
 sequenceSet$length <- as.numeric(sequenceSet$length)
@@ -212,6 +215,7 @@ lengthDist <- data.frame(length=head(breaks, -1), raw=as.vector(rawS), pychop=as
 
 lengthDistMelt <- reshape2::melt(lengthDist, id.vars=c("length"))
 
+# plot read length distribution for rax and PyChopper reads
 ggplot(lengthDistMelt, aes(x=length, fill=variable, y=value)) +
   geom_col() +
   xlab("Read length\n") + ylab("Number of reads\n") +
@@ -271,7 +275,7 @@ plot(g2)
 
 # Expressed genes and expression levels from the raw data
 
-Based on the Full BAM data and the genome coordinate of all exons (current reference genome: **'R64-1-1.97'**), we computed how many of the reference exons had coverage and counted the corresponding genes (keeping the average exon coverage as final coverage value). In this section, we made use of the tool **'mosdepth'** (https://github.com/brentp/mosdepth) and some R magic.
+Based on the Full BAM data and the genome coordinate of all exons (current reference genome: **'config$genome_id'**), we computed how many of the reference exons had coverage and counted the corresponding genes (keeping the average exon coverage as final coverage value). In this section, we made use of the tool **'mosdepth'** (https://github.com/brentp/mosdepth) and some R magic.
 
 ```{bash echo=FALSE, eval=FALSE, comment=""}
 # Part now done by Snakemake
@@ -350,6 +354,7 @@ ggplot(data=cvg.dat2, aes(x=rank, y=perc_reads)) +
   geom_vline(xintercept=N50, colour="red", linetype = "longdash") +
   geom_vline(xintercept=N90, colour="red", linetype = "dotted")
 
+# create IGV coverage track 
 igv <- cvg.dat2[,c(2:4,1,5)] %>%
   arrange(chr, from, to)
 
@@ -366,7 +371,7 @@ The top N genes (from the right of the plot) contribute to X% of all reads
 * `r top25pc` most expressed genes => 25% of the reads
 * `r top10pc` most expressed genes => 10% of the reads
 
-The next table reports the top`r topexp` most expressed genes
+The next table reports the top`r topexp` most expressed genes based on coverage values (right of the curve).
 
 ```{r, echo=FALSE, cache=FALSE, resize.width=100}
 
@@ -374,24 +379,22 @@ knitr::kable(tail(cvg.dat2,topexp)[,c(1:5,9)], caption=paste("Top ", topexp, " e
   kable_styling(latex_options=c("hold_position", font_size=9)) 
 
 # reorder dataframe
-cvg.dat %>% 
-  group_by(gene) %>% 
-  filter(n()>1) %>%
-  arrange(gene)
-
-# extract gene IDs to vector
-ids <- tail(cvg.dat, topexp)[,1]$gene
+#cvg.dat %>% 
+#  group_by(gene) %>% 
+#  filter(n()>1) %>%
+#  arrange(avg_cvg)
 ```
 
-# Functional enrichment results from the Top20 expressed genes
+# Functional enrichment results from the Top`r topexp` expressed genes
 
-The biological functions carried by the top 20 expressed genes were identified using '''YeastMine''' (https://yeastmine.yeastgenome.org) which is part of the '''InterMine''' suite [@InterMine].
+The biological functions carried by the top `r topexp` expressed genes were identified using '''`r config$mine`''' as part of the '''InterMine''' suite [@InterMine] (http://intermine.org/).
 
 ```{r, echo=FALSE, cache=FALSE, resize.width=100}
+# prepare InterMine sources
 mine <- config$mine
 im <- initInterMine(mine=listMines()[mine])
-#template = getTemplates(im)
-#head(template)
+template = getTemplates(im)
+# head(template)
 #template[grep("gene", template$name, ignore.case=TRUE),]
 queryGeneGO <- getTemplateQuery(im, "Gene_GO")
 #queryGeneGO
@@ -400,7 +403,12 @@ widgets = as.data.frame(getWidgets(im))
 
 #BiocManager::install("org.Sc.sgd.db")
 #library(org.Sc.sgd.db)
-# substituted by the correct database
+
+# load the correct genome database for InterMineR
+enrichlib <- config$orgdb
+library(enrichlib,character.only = TRUE)
+
+# create ENTREZ mapping database dynamically based on the chosen enrichlib
 miner.ENTREZ <- paste(gsub(".db", "", enrichlib), "ENTREZID", sep="")
 x <- eval(parse(text=miner.ENTREZ))
 
@@ -409,17 +417,31 @@ mapped_genes <- mappedkeys(x)
 # Convert to a list
 xx <- as.list(x[mapped_genes])
 
-#ids <- c("YBR072W", "YBR118W", "YHR174W", "YKL060C", "YKL152C", "YKL153W", "YDR077W", "YGL055W", "YGL102C", "YGL103W", "YGR192C", #"YGR254W", "YJL052W", "YJL159W", "YLR044C", "YLR110C", "YMR251W-A", "YNL031C", "YOL052C-A", "YPR036W-A")
+# prepare gene-list for enrichment
+#ids <- c("YBR072W", "YBR118W", "YHR174W", "YKL060C", "YKL152C", "YKL153W", "YDR077W", "YGL055W", "YGL102C", "YGL103W", "YGR192C", "YGR254W", "YJL052W", "YJL159W", "YLR044C", "YLR110C", "YMR251W-A", "YNL031C", "YOL052C-A", "YPR036W-A")
+
+# extract gene IDs to vector
+ids <- tail(cvg.dat2, topexp)[,1]$gene
+
+# convert to entrez
 entrez <- xx[ids]
+
+# remove NA's
 entrez[sapply(entrez, is.null)] <- NA
 
+# get corresponding EntrezIDs
 dat <- data.frame(query=ids, entrezID = as.vector(unlist(entrez)))
+
+# remove NA's
 dat <- subset(dat,dat$entrezID != "NA")
+
+# convert to vector
 gene_entrez <- as.character(unlist(dat$entrezID))
-#str(gene_entrez)
+
+## enrich against interMine
 
 # get GO enrichment
-PD_FDR_enrichResult = doEnrichment(
+GO_FDR_enrichResult = doEnrichment(
   im = im,
   ids = gene_entrez,
   widget = "go_enrichment_for_gene",
@@ -437,7 +459,7 @@ Path_FDR_enrichResult <- doEnrichment(
 ```
 
 ```{r MinerTop, echo=FALSE, cache=FALSE, resize.width=100}
-knitr::kable(PD_FDR_enrichResult$data[1:10,], 
+knitr::kable(GO_FDR_enrichResult$data[1:10,], 
              caption=paste("Top10 Miner-enriched GO categoried for the Top", topexp," genes", sep=""), 
              booktabs=TRUE, 
              table.envir='table*', 
@@ -491,7 +513,7 @@ The analysis here only considers the reference genes that are partially or compl
 
 The **`GffCompare`** software classifies transcripts within its output files into classes that include ("=", "u", "c") and others. These define how a transcript can be best described relative to the provided reference annotation.
 
-![](http://ccb.jhu.edu/software/stringtie/gffcompare_codes.png)
+![](Static/Images//gffcompare_codes.png)
 
 The figure above is from the **`GffCompare`** software webpages at John Hopkins University. This figure describes the different codes and provides cartoons illustrating the differences with canonical genes.
 
@@ -500,7 +522,10 @@ Summary statistics for the isoforms contrasted to the reference annotation are p
 ```{r, echo=FALSE}
 
 tracking <- data.table::fread("Analysis/GffCompare/nanopore.tracking", stringsAsFactors=FALSE, sep="\t", header=FALSE)
-ggplot(tracking, aes(V4)) + geom_histogram(stat="count", fill="steelblue") + labs(title="histogram showing GffCompare classes for annotated transcripts") + xlab("GffCompare class")
+ggplot(tracking, aes(V4)) + 
+  geom_bar(fill="steelblue") + 
+  labs(title="histogram showing GffCompare classes for annotated transcripts") + 
+  xlab("GffCompare class")
 
 ```
 
@@ -509,8 +534,6 @@ The histogram in the figure above shows the distribution of **`GffCompare`** ann
 GffCompare finally collapses transcribed-fragments (transfrags) into the single longest transcript that shares the same patterns of intron boundaries to produce a non-redundant set of transcripts. 
 
 ```{r, comment=NA, echo=FALSE}
-# select for the tracking data that corresponds to transcripts of a given class (u in this case)
-usegffclass = "u"
 
 printGFFclass <- function(usegffclass) {
   gffclasssel <- t(data.frame(strsplit(gsub("^[^:]+:","",unlist(tracking[which(tracking$V4 == usegffclass),5])),"\\|")))
@@ -534,11 +557,14 @@ printGFFclass <- function(usegffclass) {
   
   # we can have NA values in this table since the tracking data is based on a redundant dataset and the gff is nonred
   if (length(which(is.na(gffCoords[,1])))>0) { gffCoords <- gffCoords[-which(is.na(gffCoords[,1])),] }
-  
-  kable(gffCoords, format="pandoc", caption=paste("Table summarising transcripts identified by the Pinfish that correspond to GffCompare class \"",usegffclass,"\"",sep=""))
+  tlen <- nrow(gffCoords)
+  mess <- ifelse(tlen > 20, " first 20 of ", "")
+  kable(head(gffCoords, 20), format="pandoc", caption=paste("Table summarising the ", mess, tlen, " transcripts identified by the Pinfish that correspond to GffCompare class \"",usegffclass,"\"",sep=""))
 
 }
 
+# select for the tracking data that corresponds to transcripts of a given class (u in this case)
+usegffclass = "u"
 printGFFclass(usegffclass)
 ```
 
@@ -546,12 +572,15 @@ The table above shows the transcripts that were identified as class **u: potenti
 
 **REM**: a number of 'novel' transcript appear in IGV as read through from neighbour genes and may be either artefacts from the long read library protocol or true long-RNA molecules.
 
-
 ```{r, echo=FALSE}
 printGFFclass("j")
 ```
 
-The table above shows the transcripts that have been assigned to the class **j: multi-exon with at least one junction match**. This classification could include a variety of novel isoforms - these can be checked using a genome browser. An example of using IGV is covered in the next section
+Finally, a number of transcripts are assigned to the class **=: complete exact match of intron chain** when comparing to the public reference annotation.
+
+```{r, echo=FALSE}
+printGFFclass("=")
+```
 
 
 # IGV visual inspection of the results
@@ -560,7 +589,7 @@ The Integrative Genomics Viewer (**`IGV`**) is a tool for the visualization of g
 
 **`IGV`** can be started from the command line by using the command `igv.sh`.
 
-We recommend using **`IGV`** [@IGV] to display the raw and processed data in teh context of the public reference. The command below will open the **`IGV`** browser to the display the main data from this analysis.
+We recommend using **`IGV`** [@IGV] to display the raw and processed data in the context of the public reference. The command below will open the **`IGV`** browser to the display the main data from this analysis.
 
 
 ```{bash, echo=TRUE, eval=FALSE}
@@ -590,13 +619,7 @@ The obtained IGV session contains from top to bottom:
 * the public annotation track
 * the transcript models derived from the Pinfish analysys
 
-# Snakemake Graph of the current pipeline
-
-```{r, echo=FALSE}
-knitr::include_graphics("Static/Images/graph.pdf")
-
-```
-
+`r slurpContent("Conclusion.md")`
 
 # Glossary of Terms
 
@@ -613,6 +636,14 @@ knitr::include_graphics("Static/Images/graph.pdf")
 * __QV__  the quality value, -log10(p) that any given base is incorrect. QV may be either at the individual base level, or may be averaged across whole sequences
 
 
+# Snakemake Graph of the current pipeline
+
+```{r dagGraph, echo=FALSE}
+
+knitr::include_graphics("Static/Images/graph.png")
+```
+
+
 # Tool references
 
 A list of the R packages used to create this report is shown next.
@@ -620,6 +651,7 @@ A list of the R packages used to create this report is shown next.
 \fontsize{6}{10}
 
 ```{r sessionInfo, eval=TRUE, echo=FALSE, comment=NA}
+
 options(width = 100)
 utils:::print.sessionInfo(sessionInfo()[-7], locale=FALSE)
 ```
@@ -631,6 +663,10 @@ It is also worth recording the versions of the software that have been used for 
 \fontsize{6}{10}
 
 ```{r, engine='bash', echo=FALSE, comment=NA}
+
+# path to conda on the machine
+condapath="/opt/biotools/miniconda3/condabin"
+
 ${condapath}/conda list -n Pinfish "samtools|minimap2|snakemake|rstudio|pinfish|pychopper|racon|gffread|gffcompare|igv|openjdk|mosdepth"
 ```
 

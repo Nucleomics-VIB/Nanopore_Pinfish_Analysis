@@ -3,19 +3,22 @@
 threads: 80
 pychopper: TRUE
 
-# species database for enrichment with InterMine
-mine: "YeastMine"
-orgdb: "org.Sc.sgd.db"
+# read data
+# CDNA or direct RNA reads in fastq format:
+raw_fastq: "3166_20190730_hac.fq"
+guppy_version: "3.0.6"
 
-# Input genome:
+# Reference genome:
 # genome_fasta could either be (1) a URL to a genome assembly e.g. at enseml / ncbi
 #                              (2) a filename corresponding to file that has been placed in the $ReferenceData folder
 genome_fasta: "http://ftp.ensembl.org/pub/release-97/fasta/saccharomyces_cerevisiae/dna/Saccharomyces_cerevisiae.R64-1-1.dna.toplevel.fa.gz"
 genome_annot: "http://ftp.ensembl.org/pub/release-97/gtf/saccharomyces_cerevisiae/Saccharomyces_cerevisiae.R64-1-1.97.gtf.gz"
 barcodes_fasta: "ReferenceData/teloprime_primers.fas"
+genome_id: "R64-1-1.97"
 
-# CDNA or direct RNA reads in fastq format:
-raw_fastq: "3166_20190730_hac.fq"
+# species database for enrichment with InterMine
+mine: "YeastMine"
+orgdb: "org.Sc.sgd.db"
 
 # options passed to Pychopper
 score_percentile: 98
@@ -63,6 +66,6 @@ collapse_three_tol: 30
 # how many top expressed genes to consider for enrichment
 topexp: 100
 
-## General pipeline parameters:
-tutorialText: FALSE
+## Add user custom text parts to the report:
+UserText: TRUE
 
