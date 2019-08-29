@@ -670,7 +670,7 @@ conda.tools
 
 \bigskip
 
-last edit: `r date`
+last edit: `r date()`
 
 ![logo](Static/Images/NC_logo.png) more at **<http://www.nucleomics.be>**
 
