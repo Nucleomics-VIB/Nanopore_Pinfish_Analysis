@@ -1,7 +1,8 @@
 ---
 title: "GridION cDNA sequence annotation<br>Pinfish workflow"
-author: 
-- Stéphane Plaisance, Caroline Van Damme (VIB - Nucleomics Core, nucleomics@vib.be) 
+author:  |
+  | Stéphane Plaisance [analysis], Caroline Van Damme [data production] 
+  | VIB - Nucleomics Core, nucleomics@vib.be
 date: "Report created: `r Sys.Date()`"
 output:
   html_document:
@@ -655,11 +656,13 @@ It is also worth recording the versions of the software that have been used for 
 \fontsize{6}{10}
 
 ```{r report conda packages, eval=TRUE, echo=FALSE, comment=NA}
-cmd <- paste(config$condapath, 
+cmd <- paste(
+  config$condapath, 
+  "/conda --version; ",
+  config$condapath, 
   "/conda list -n ", 
   config$condaenv, 
-  " ",
-  "\'samtools|minimap2|snakemake|rstudio|pinfish|pychopper|racon|gffread|gffcompare|igv|openjdk|mosdepth\'",
+  " \'samtools|minimap2|snakemake|rstudio|pinfish|pychopper|racon|gffread|gffcompare|igv|openjdk|mosdepth\'",
   sep="")
 conda.tools <- system(cmd, intern = TRUE)
 conda.tools

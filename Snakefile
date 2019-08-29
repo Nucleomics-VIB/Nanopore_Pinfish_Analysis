@@ -68,7 +68,7 @@ rule all:
     "ReferenceData/"+UnpackedGenomeGFF+"_exons.bed",
     "Analysis/Pinfish/plot_gffcmp_stats.png",
     expand("Analysis/MosDepth/{mos_out}", mos_out=mos_out),
-    "Static/Images/graph.pdf",
+    "Static/Images/graph.png",
     "Nanopore_Pinfish_Analysis.html"
 
 
@@ -288,7 +288,8 @@ rule plotPinfishStats: ## plot_gffcmp_stats.py script from https://github.com/na
         png = "Analysis/Pinfish/plot_gffcmp_stats.png",
         pik = "Analysis/Pinfish/plot_gffcmp_stats.pk"
     shell:
-        "plot_gffcmp_stats.py -r {output.pdf} -p ${output.pik} {input.stats} && convert {output.pdf}[0] {output.png}"
+        "plot_gffcmp_stats.py -r {output.pdf} -p ${output.pik} {input.stats} && \
+        convert -density 300 -quality 100 {output.pdf}[0] {output.png}"
 
 
 rule MosDepth: ## Add coverage info for list of expressed gene and plotting in R
@@ -305,12 +306,12 @@ rule MosDepth: ## Add coverage info for list of expressed gene and plotting in R
 
 rule PrintGraph: ## pring graphs documenting the current pipeline
     output:
-        dag = "Static/Images/dag.pdf",
-        graph = "Static/Images/graph.pdf"
+        dag = "Static/Images/dag.png",
+        graph = "Static/Images/graph.png"
     shell:
         """
-        snakemake --forceall --rulegraph | dot -Tpdf > {output.graph};
-        snakemake --forceall --dag | dot -Tpdf > {output.dag}
+        snakemake --forceall --rulegraph | dot -Tpng > {output.graph};
+        snakemake --forceall --dag | dot -Tpng > {output.dag}
         """
 
 rule KnitReport: ## Knit the Rmd report from the obtained data
