@@ -16,7 +16,7 @@ Running this code requires:
 
 * run Snakemake with ```snakemake --use-conda -j <thread number>```
 
-If all goes well, the proper analysis will be followed by the making of the html report in R.
+If all goes well, the proper analysis will be followed by the making of the html report using Rmarkdown and conversion to a html report file with pictures and tables.
 
 * the final data files are put in the folder ```Analysis```
 * the final report should appear as ```Nanopore_Pinfish_Analysis.html```
