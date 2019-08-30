@@ -24,7 +24,7 @@ If all goes well, the proper analysis will be followed by the making of the html
 
 [view the report hosted here](http://htmlpreview.github.io/?https://github.com/Nucleomics-VIB/Nanopore_Pinfish_Analysis/blob/master/Nanopore_Pinfish_Analysis.html)
 
-rem: when something breaks the snake, or if you add more text/comments in the initial Rmd report, you can regenerate the report manually with ```R --slave -e 'rmarkdown::render("Nanopore_Pinfish_Analysis.Rmd", "html_document")'``` withing the base project folder.
+rem: when something breaks the snake, or if you add more text/comments in the initial Rmd report, you can regenerate the report manually with ```R --slave -e 'rmarkdown::render("Nanopore_Pinfish_Analysis.Rmd", "html_document")'``` within the base project folder.
 
 <hr>
 
