@@ -10,10 +10,10 @@ Please refer to the original document for installilng the necessary components a
 Running this code requires:
 
 * installing **miniconda** and all required dependencies from the provided **environment.yaml** (```conda env create --name pinfish_3.6 --file=environment.yaml```)
-* editing the **config.yaml** file tomatch your own machine, reference genome, and data
+* editing the **config.yaml** file to match your own machine, reference genome, and data
 * adding the required data files in due locations (matching the yaml)
 * edit the **Preamble.md** file to include a text describing the 'Aim' of the experiment. This text will be added to the report as first section and is one of the two report sections that can be edited by the end-user.
-* optionally edit **Conclusion.md** that will be added at the end of the report during knitting.
+* edit **Conclusion.md** that will be added at the end of the report during knitting.
 
 * run Snakemake with ```snakemake --use-conda -j <thread number>```
 
@@ -24,7 +24,7 @@ If all goes well, the proper analysis will be followed by the making of the html
 
 [view the report hosted here](http://htmlpreview.github.io/?https://github.com/Nucleomics-VIB/Nanopore_Pinfish_Analysis/blob/master/Nanopore_Pinfish_Analysis.html)
 
-rem: when something breaks the snake, you can fix the missing steps and run the report manually with ```R --slave -e 'rmarkdown::render("Nanopore_Pinfish_Analysis.Rmd", "html_document")'``` withing the base project folder.
+rem: when something breaks the snake, or if you add more text/comments in the initial Rmd report, you can regenerate the report manually with ```R --slave -e 'rmarkdown::render("Nanopore_Pinfish_Analysis.Rmd", "html_document")'``` withing the base project folder.
 
 <hr>
 
