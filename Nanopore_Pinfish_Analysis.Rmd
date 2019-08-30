@@ -275,7 +275,7 @@ plot(g2)
 
 # Expressed genes and expression levels from the raw data
 
-Based on the Full BAM data and the genome coordinate of all exons (current reference genome: **'config$genome_id'**), we computed how many of the reference exons had coverage and counted the corresponding genes (keeping the average exon coverage as final coverage value). In this section, we made use of the tool **'mosdepth'** (https://github.com/brentp/mosdepth) and some R magic.
+Based on the Full BAM data and the genome coordinate of all exons (current reference genome: **`r config$genome_id`**), we computed how many of the reference exons had coverage and counted the corresponding genes (keeping the average exon coverage as final coverage value). In this section, we made use of the tool **'mosdepth'** (https://github.com/brentp/mosdepth) and some R magic.
 
 ```{bash echo=FALSE, eval=FALSE, comment=""}
 # Part now done by Snakemake
