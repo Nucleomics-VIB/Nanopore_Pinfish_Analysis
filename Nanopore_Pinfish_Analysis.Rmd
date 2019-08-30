@@ -140,7 +140,6 @@ All selected reads are aligned to the reference genome with **'minimap2'** [@min
 The table below reports the counts of the different entities found with the sequencing dataset.
 
 
-
 ```{r summaryStatsTable, echo=FALSE, cache=FALSE, resize.width=100}
 
 knitr::kable(qcData, caption="Summary statistics for the cDNA data processed before and after PyChopper filtering", booktabs=TRUE, table.envir='table*', linesep="")  %>%
@@ -149,7 +148,7 @@ knitr::kable(qcData, caption="Summary statistics for the cDNA data processed bef
 
 The summary statistics displayed in the table above include observational metrics including the number of reads, information on the longest, shortest and mean sequence read lengths and other information that includes GC content, N50 and N90 read lengths. The first result column describes the sequence characteristics of the raw sequence collection. The second column describes the sequences following the **`pychopper`** analysis.
 
-**`pychopper`** selects for sequence reads that contain the appropriate adapter sequences at each end of the sequence read. These adapter sequences are also used to orientate the sequences into the correct stranded orientation. 
+**`pychopper`** selects for sequence reads that contain the appropriate adapter sequences at both ends of the sequence (sub)read. These adapter sequences are also used to orientate the sequences into the correct stranded orientation. 
 Running **`pychopper`** on your sequence collection will reduce the total number of reads but will qualitatively increase the utility of the library for isoform discovery. The table above should be reviewed to see how the starting sequence library has been transformed.
 
 
@@ -313,14 +312,14 @@ cvg.dat <- cvg.dat %>%
                    avg_cvg = mean(cvg, na.rm=TRUE)) %>%
   arrange(chr,from,to)
 
-exp <- subset(cvg.dat, cvg.dat$avg_cvg>=0)
-suppressMessages(
-  ggplot(exp, aes(x=avg_cvg)) + 
+# limit by removing high cvg outliers above mx limit
+mx=500
+exp <- subset(cvg.dat, cvg.dat$avg_cvg>=0 & cvg.dat$avg_cvg<=mx)
+ggplot(exp, aes(x=avg_cvg)) + 
   geom_density(alpha=.3) +
   xlim(c(0,500)) +
     xlab("per-gene average read coverage") +
     ylab("fraction of genes at a given read coverage")
-)
 ```
 
 REM: the plot was truncated at 500 to hide the very long tail of highly expressed genes
@@ -381,7 +380,7 @@ knitr::kable(tail(cvg.dat2,topexp)[,c(1:5,9)], caption=paste("Top ", topexp, " e
 
 # Functional enrichment results from the Top`r topexp` expressed genes
 
-The biological functions carried by the top `r topexp` expressed genes were identified using '''`r config$mine`''' as part of the '''InterMine''' suite [@InterMine] (http://intermine.org/).
+The biological functions carried by the top `r topexp` expressed genes were identified using *`r config$mine`* as part of the **InterMine** suite [@InterMine] (http://intermine.org/).
 
 ```{r InterMine analysis, echo=FALSE, cache=FALSE, resize.width=100}
 # prepare InterMine sources
@@ -398,7 +397,7 @@ im <- initInterMine(mine=listMines()[mine])
 
 # load the correct genome database for InterMineR
 enrichlib <- config$orgdb
-library(enrichlib,character.only = TRUE)
+library(enrichlib, character.only = TRUE)
 
 # create ENTREZ mapping database dynamically based on the chosen enrichlib
 miner.ENTREZ <- paste(gsub(".db", "", enrichlib), "ENTREZID", sep="")
@@ -482,7 +481,7 @@ The [GffCompare](https://github.com/gpertea/GffCompare) methods provide a collec
 
 
 ```{r, echo=FALSE, comment=""}
-cat(paste(readLines("Analysis/GffCompare/nanopore.stats"),collapse="\n"))
+cat(paste(readLines("Analysis/GffCompare/nanopore.stats"), collapse="\n"))
 ```
 
 The output above is from the **`GffCompare`** summary statistics. This describes the number of transcripts that were identified within the **`Pinfish`** analysis that are non-redundant and are overlapping with the provided reference annotation. Sensitivity and precision of annotation are compared with the reference. This output also provides information on the novelty of transcribed features. The formulae below describe the calculations for sensitivity and precision using true positives (TP), false positives (FP), true negatives (TN) and false negatives (FN).
@@ -503,7 +502,7 @@ The analysis here only considers the reference genes that are partially or compl
 
 The **`GffCompare`** software classifies transcripts within its output files into classes that include ("=", "u", "c") and others. These define how a transcript can be best described relative to the provided reference annotation.
 
-![](Static/Images//gffcompare_codes.png)
+![](Static/Images/gffcompare_codes.png)
 
 The figure above is from the **`GffCompare`** software webpages at John Hopkins University. This figure describes the different codes and provides cartoons illustrating the differences with canonical genes.
 
@@ -521,7 +520,7 @@ ggplot(tracking, aes(V4)) +
 
 The histogram in the figure above shows the distribution of **`GffCompare`** annotated transcripts. There are **`r length(which(tracking$V4 == "="))`**  transcripts assigned code **`=`** or corresponding to an exact match with an annotated gene. **`r length(which(tracking$V4 == "u"))`** transcripts are undefined in the provided genome annotation GFF file. These transcripts could represent novel genes. The other codes together account for **`r round((nrow(tracking) - length(which(tracking$V4 == "=" | tracking$V4 == "u"))) / nrow(tracking) * 100, digits=1)`** **%** of the sequence reads and represent potentially novel isoforms with a variety of missing exons, retained introns and more complex multi-exon events. 
 
-GffCompare finally collapses transcribed-fragments (transfrags) into the single longest transcript that shares the same patterns of intron boundaries to produce a non-redundant set of transcripts. 
+GffCompare finally collapses transcribed-fragments (`transfrags`) into the single longest transcript that shares the same patterns of intron boundaries to produce a non-redundant set of transcripts. 
 
 ```{r, comment=NA, echo=FALSE}
 
@@ -553,27 +552,56 @@ printGFFclass <- function(usegffclass) {
         format="pandoc", 
         caption=paste("Table summarising the ", mess, tlen, " transcripts identified by the Pinfish that correspond to GffCompare class \"",usegffclass,"\"",sep="")
         )
-
 }
+```
 
-# select for the tracking data that corresponds to transcripts of a given class (u in this case)
-usegffclass = "u"
+A number of canonical transcripts (**=: complete exact match of intron chain**) are found when comparing to the public reference annotation.
+
+```{r, echo=FALSE}
+usegffclass <- "="
 printGFFclass(usegffclass)
 ```
 
-The table above shows the transcripts that were identified as class **u: potential novel transcripts**. The columns presented show the chromosome on which the transcript has been identified, the nature of the transcript annotation and coordinates that include the start and stop coordinates, the strand on which the transcript has been annotated	and the number of	exons the transcript contains. Since the classification of novelty is based on the provided annotation we recommend that the annotated isoform is checked against the reference genome to investigate novelty.
-
-**REM**: a number of 'novel' transcript appear in IGV as read through from neighbour genes and may be either artefacts from the long read library protocol or true long-RNA molecules.
-
 ```{r, echo=FALSE}
-printGFFclass("j")
+# create GTF subset for IGV
+try(system(paste("scripts/filter_gff.sh Analysis/GffCompare/nanopore.combined.gtf '", usegffclass, "'", sep=""), intern=FALSE))
+cat(paste("The corresponding GTF data was stored in 'Analysis/GffCompare/class_", usegffclass, "_nanopore.combined.gtf'", sep=""))
 ```
 
-Finally, a number of transcripts are assigned to the class **=: complete exact match of intron chain** when comparing to the public reference annotation.
+The table above shows the transcripts that were identified as class '='. The columns presented show the chromosome on which the transcript has been identified, the nature of the transcript annotation and coordinates that include the start and stop coordinates, the strand on which the transcript has been annotated and the number of exons the transcript contains. 
+
+Other transcripts appear as novel (**u: potential novel transcripts**)
+
+The table above shows the transcripts that were identified as class 'u'. Since the classification of novelty is based on the provided annotation we recommend that the annotated isoform is checked against the reference genome to investigate novelty. For some cases looked at in IGV, an additional distant exon seems added to the model and is often found after the neighbour gene. Wether this is true or some artefact remains to be validated by RT-PCR.
 
 ```{r, echo=FALSE}
-printGFFclass("=")
+
+usegffclass <- "u"
+printGFFclass(usegffclass)
 ```
+
+```{r, echo=FALSE}
+# create GTF subset for IGV
+try(system(paste("scripts/filter_gff.sh Analysis/GffCompare/nanopore.combined.gtf '", usegffclass, "'", sep=""), intern=FALSE))
+cat(paste("The corresponding GTF data was stored in 'Analysis/GffCompare/class_", usegffclass, "_nanopore.combined.gtf'", sep=""))
+```
+
+
+
+Finally, a  number of '**j: multi exon with at least one junction match**' transcripts appear which may represent alternative splice of gnown genes.
+
+```{r, echo=FALSE}
+usegffclass <- "j"
+printGFFclass(usegffclass)
+```
+
+```{r, echo=FALSE}
+# create GTF subset for IGV
+try(system(paste("scripts/filter_gff.sh Analysis/GffCompare/nanopore.combined.gtf '", usegffclass, "'", sep=""), intern=FALSE))
+cat(paste("The corresponding GTF data was stored in 'Analysis/GffCompare/class_", usegffclass, "_nanopore.combined.gtf'", sep=""))
+```
+
+Many of the non-canonical trascripts are probably alternative isoforms which have been misclassified and would require manual inspection and reclassification. Future version(s) of the current software are expected to improve the classification, in part by better clipping of the raw data prior to clustering but manual curation is probably teh best way to get final data from this type of analysis.
 
 
 # IGV visual inspection of the results
@@ -590,6 +618,21 @@ We recommend using **`IGV`** [@IGV] to display the raw and processed data in the
 # and bash variables below derived from the config.yaml values
 # getting yaml to bash variables can easily be done with parse_yaml from https://gist.github.com/pkuczynski/8665367
 
+parse_yaml () 
+{ 
+    local prefix=$2;
+    local s='[[:space:]]*' w='[a-zA-Z0-9_]*' fs=$(echo @|tr @ '\034');
+    sed -ne "s|^\($s\)\($w\)$s:$s\"\(.*\)\"$s\$|\1$fs\2$fs\3|p" -e "s|^\($s\)\($w\)$s:$s\(.*\)$s\$|\1$fs\2$fs\3|p" $1 | awk -F$fs '{
+      indent = length($1)/2;
+      vname[indent] = $2;
+      for (i in vname) {if (i > indent) {delete vname[i]}}
+      if (length($3) > 0) {
+         vn=""; for (i=0; i<indent; i++) {vn=(vn)(vname[i])("_")}
+         printf("%s%s%s=\"%s\"\n", "'$prefix'",vn, $2, $3);
+      }
+   }'
+}
+
 eval $(parse_yaml config.yaml)
 
 cmd="igv.sh -g ./ReferenceData/$(basename ${genome_fasta%.gz}) \
@@ -597,10 +640,20 @@ cmd="igv.sh -g ./ReferenceData/$(basename ${genome_fasta%.gz}) \
 ./Analysis/Minimap2/polished_reads_aln_sorted.bam,\
 ./ReferenceData/$(basename ${genome_annot%.gz}),\
 ./Analysis/Pinfish/polished_transcripts.gff,\
+./Analysis/GffCompare/nanopore.combined.gtf,\
+./Analysis/GffCompare/class_=_nanopore.combined.gtf,\
+./Analysis/GffCompare/class_u_nanopore.combined.gtf,\
 ./Analysis/MosDepth/gene_coverage.igv"
 
 echo "# running ${cmd}"
 eval ${cmd}
+```
+
+REM: the next picture is indicative and may not reflect the current experiment
+
+```{r, echo=FALSE}
+knitr::include_graphics("Static/Images/igv.png")
+
 ```
 
 The obtained IGV session contains from top to bottom:
@@ -610,7 +663,10 @@ The obtained IGV session contains from top to bottom:
 * the raw read mappings to the reference genome
 * the clustered and polished read subset mapped to the reference
 * the public annotation track
-* the transcript models derived from the Pinfish analysys
+* the transcript models derived from the Pinfish analysis
+* the full GffCompare track
+* the 'class_=_' subset of the GffCompare track
+* the 'class_u_' subset of the GffCommpare track
 
 `r slurpContent("Conclusion.md")`
 
