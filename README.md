@@ -20,7 +20,7 @@ Running this code requires:
 If all goes well, the proper analysis will be followed by the making of the html report using Rmarkdown and conversion to a html report file with pictures and tables.
 
 * the final data files are put in the folder ```Analysis```
-* the final report should appear as ```Nanopore_Pinfish_Analysis.html```
+* the final report should appear as ```Nanopore_Pinfish_Analysis.html```. This report is a single html file with all in it and can be sent to customers/colleagues as a final report. It is nicer than a PDF version because of large tables and figures which would suffer from page breaks and it can be viewed on any device supporting html (incl smartphones :-).
 
 [view the report hosted here](http://htmlpreview.github.io/?https://github.com/Nucleomics-VIB/Nanopore_Pinfish_Analysis/blob/master/Nanopore_Pinfish_Analysis.html)
 
