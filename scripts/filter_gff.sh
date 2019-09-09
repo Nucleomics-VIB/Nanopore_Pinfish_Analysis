@@ -10,8 +10,14 @@ q="class_code \"${class}\""
 
 echo "# filtering '${q}'"
 
-# get list of IDs
-gawk -v cl="${q}" 'BEGIN{FS="\t"; OFS="\t"}{ split($9,anno,";"); if ( anno[4]~cl || anno[6]~cl ) { split(anno[1],id,"\""); sel[id[2]]=1 } }END{for (x in sel) {print x} }' ${gtf} > /tmp/selected.lst
+# get list of 'unique' IDs
+gawk -v cl="${q}" '
+BEGIN{FS="\t"; OFS="\t"}\
+{ split($9,anno,";"); if ( anno[4]~cl || anno[6]~cl ) { split(anno[1],id,"\""); sel[id[2]]=1 } }\
+END{for (x in sel) {print x} }
+' ${gtf} > /tmp/selected.lst
 
-# extract
+# extract list rows from file
 grep -f /tmp/selected.lst ${gtf} > "${pname}/class_${class}_${fname}"
+
+# the /tmp/selected.lst file will be deleted at next boot
